@@ -8,6 +8,10 @@ object ProjectConfig {
     val `zio-config` = "1.0.0-RC27"
     val `zio-logging` = "0.5.2"
 
+    val logback = "1.2.3"
+
+    val slf4j = "1.7.30"
+
   }
 
   val zioDeps = Seq(
@@ -28,6 +32,11 @@ object ProjectConfig {
     "org.http4s" %% "http4s-dsl" % versions.http4s
   )
 
+  val logDependencies = Seq(
+    "ch.qos.logback" % "logback-classic" % versions.logback,
+    "org.slf4j" % "slf4j-api" % versions.slf4j
+  )
+
   val circeDeps = Seq("io.circe" %% "circe-yaml" % "0.12.0")
-  val deps = zioDeps ++ http4sDeps ++ circeDeps
+  val deps = zioDeps ++ http4sDeps ++ circeDeps ++ logDependencies
 }
