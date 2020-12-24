@@ -11,11 +11,12 @@ object ProjectConfig {
     val logback = "1.2.3"
 
     val slf4j = "1.7.30"
-
+    val sttp = "2.1.4"
   }
 
   val zioDeps = Seq(
     "dev.zio" %% "zio" % versions.zio,
+    "dev.zio" %% "zio-macros" % versions.zio,
     "dev.zio" %% "zio-interop-cats" % versions.interopCats,
     "dev.zio" %% "zio-config" % versions.`zio-config`,
     "dev.zio" %% "zio-config-magnolia" % versions.`zio-config`,
@@ -37,6 +38,10 @@ object ProjectConfig {
     "org.slf4j" % "slf4j-api" % versions.slf4j
   )
 
+  val sttpDeps = Seq(
+    "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % versions.sttp,
+    "com.softwaremill.sttp.client" %% "circe" % versions.sttp
+  )
   val circeDeps = Seq("io.circe" %% "circe-yaml" % "0.12.0")
-  val deps = zioDeps ++ http4sDeps ++ circeDeps ++ logDependencies
+  val deps = zioDeps ++ http4sDeps ++ circeDeps ++ logDependencies ++ sttpDeps
 }

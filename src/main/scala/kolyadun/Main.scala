@@ -1,4 +1,4 @@
-package ssmok
+package kolyadun
 
 import org.slf4j.LoggerFactory
 import zio.{App, ExitCode, Has, UIO, URIO, ZEnv, ZIO, ZLayer}
