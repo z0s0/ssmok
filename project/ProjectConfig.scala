@@ -12,6 +12,7 @@ object ProjectConfig {
 
     val slf4j = "1.7.30"
     val sttp = "2.1.4"
+    val circe = "0.13.0"
   }
 
   val zioDeps = Seq(
@@ -42,6 +43,10 @@ object ProjectConfig {
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % versions.sttp,
     "com.softwaremill.sttp.client" %% "circe" % versions.sttp
   )
-  val circeDeps = Seq("io.circe" %% "circe-yaml" % "0.12.0")
+  val circeDeps = Seq(
+    "io.circe" %% "circe-yaml" % "0.12.0",
+    "io.circe" %% "circe-generic" % versions.circe,
+    "io.circe" %% "circe-generic-extras" % versions.circe
+  )
   val deps = zioDeps ++ http4sDeps ++ circeDeps ++ logDependencies ++ sttpDeps
 }
