@@ -6,6 +6,7 @@ import io.circe.syntax.EncoderOps
 object Scenario {
   implicit lazy val jsonDecoder: Decoder[Scenario] = deriveDecoder
   implicit lazy val bodyDecoder: Decoder[Body] = deriveDecoder
+  implicit lazy val authDecoder: Decoder[Auth] = deriveDecoder
   implicit lazy val samplesConfDecoder: Decoder[SamplesConfig] = deriveDecoder
   implicit lazy val scheduleDecoder: Decoder[Schedule] = deriveDecoder
   implicit lazy val notificationConfDecoder: Decoder[NotificationConfig] =
@@ -46,7 +47,8 @@ final case class Scenario(host: String,
                           samples: SamplesConfig,
                           timingBoundaries: TimingBoundaries,
                           notificationRules: NotificationConfig,
-                          schedule: Schedule)
+                          schedule: Schedule,
+                          auth: Option[Auth])
 
 sealed trait HTTPMethod
 
@@ -64,3 +66,4 @@ final case class TimingBoundaries(mustSucceedWithin: Int,
 final case class NotificationConfig(notifyOnFailure: Boolean,
                                     notifyOnSuccess: Boolean)
 final case class Schedule(recurring: String)
+final case class Auth(method: String, credentials: Map[String, String])

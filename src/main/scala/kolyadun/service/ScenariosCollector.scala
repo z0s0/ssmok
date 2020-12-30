@@ -1,10 +1,10 @@
 package kolyadun.service
 
 import kolyadun.config.ScenariosConfig.ScenariosConfig
-import kolyadun.model._
-
+import kolyadun.model.{Scenario, ServiceDestination}
 import sttp.client.asynchttpclient.zio._
 import sttp.client._
+import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.circe._
 import zio.{Has, Task, URLayer, ZIO, ZLayer}
 
@@ -15,17 +15,25 @@ object ScenariosCollector {
     def collect: Task[List[Scenario]]
   }
 
-  val live: URLayer[SttpClient, ScenariosCollector] =
-    ZLayer.fromService { client =>
-      new Service {
-        override def collect: Task[List[Scenario]] = {
-          val req = basicRequest
-            .get(uri"http://localhost:5050/test_spec")
-            .response(asJson[List[Scenario]])
+  val live: URLayer[SttpClient with ScenariosConfig, ScenariosCollector] =
+    ZLayer
+      .fromServices[SttpBackend[Task, Nothing, WebSocketHandler], List[
+        ServiceDestination
+      ], Service] { (client, conf) =>
+        new Service {
+          override def collect: Task[List[Scenario]] = {
+            val list: List[Task[List[Scenario]]] = conf.map(sD => {
+              val req =
+                basicRequest
+                  .get(uri"${sD.host}")
+                  .response(asJson[List[Scenario]])
 
-          client.send(req).map(_.body).absolve
+              client.send(req).map(_.body).absolve
+            })
+
+            Task.collectAll(list).map(_.flatten)
+          }
         }
-      }
 
-    }
+      }
 }

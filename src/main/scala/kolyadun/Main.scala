@@ -24,8 +24,8 @@ object Main extends App {
       _ <- UIO(println(result))
     } yield ()
 
-    val layer: Layer[Throwable, ScenariosCollector] = AsyncHttpClientZioBackend
-      .layer() >>>
+    val layer: Layer[Throwable, ScenariosCollector] = (AsyncHttpClientZioBackend
+      .layer() ++ ScenariosConfig.live) >>>
       ScenariosCollector.live
 
     program.provideLayer(layer).exitCode
