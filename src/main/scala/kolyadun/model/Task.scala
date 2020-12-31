@@ -1,10 +1,10 @@
 package kolyadun.model
 
-sealed trait TaskType
+import java.util.UUID
 
-object TaskType {
-  final case object GraphQL extends TaskType
-  final case object Classic extends TaskType
-}
-
-case class Task(taskType: TaskType)
+final case class Task(host: String,
+                      path: String,
+//                      method: HTTPMethod,
+                      body: Option[String],
+                      assertStatusCode: Int = 200,
+                      suiteId: UUID)

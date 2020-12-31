@@ -1,13 +1,11 @@
 package kolyadun
 
 import kolyadun.config.ScenariosConfig
-import kolyadun.model.SamplesConfig
 import kolyadun.service.ScenariosCollector
 import kolyadun.service.ScenariosCollector.ScenariosCollector
 import org.slf4j.LoggerFactory
-import sttp.client.asynchttpclient.zio.{AsyncHttpClientZioBackend, SttpClient}
-import zio.{App, ExitCode, Has, Layer, UIO, URIO, ZEnv, ZIO, ZLayer}
-import zio.console.Console
+import sttp.client.asynchttpclient.zio.{AsyncHttpClientZioBackend}
+import zio.{App, ExitCode, Layer, UIO, URIO, ZEnv, ZIO}
 import zio.internal.Platform
 
 object Main extends App {

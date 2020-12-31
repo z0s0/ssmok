@@ -1,7 +1,6 @@
 package kolyadun.model
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
-import io.circe.syntax.EncoderOps
 
 object Scenario {
   implicit lazy val jsonDecoder: Decoder[Scenario] = deriveDecoder
@@ -15,30 +14,6 @@ object Scenario {
     deriveDecoder
 }
 
-/*
-%{
-        recurringInMinutes: 10,
-        method: :post,
-        body: %{
-          raw: "query { cities(b: $1) { iata }}",
-          params: %{
-            1 => "pidor"
-          }
-        },
-        samples: %{
-          minCombinations: 1,
-          maxCombinations: 10
-        },
-        timingBoundaries: %{
-          mustSucceedWithin: 5000,
-          shouldSucceedWithin: 2000,
-        },
-        notificationRules: %{
-          notifyOnFailure: true,
-          notifyOnSuccess: false
-        }
-      }
- */
 final case class Scenario(host: String,
                           path: String,
 //                          method: HTTPMethod,
