@@ -16,20 +16,20 @@ object Scenario {
 
 final case class Scenario(host: String,
                           path: String,
-//                          method: HTTPMethod,
+                          method: Option[String],
                           body: Option[Body],
                           assertStatusCode: Option[Int] = Some(200),
-                          samples: SamplesConfig,
-                          timingBoundaries: TimingBoundaries,
-                          notificationRules: NotificationConfig,
-                          schedule: Schedule,
+                          samples: Option[SamplesConfig],
+                          timingBoundaries: Option[TimingBoundaries],
+                          notificationRules: Option[NotificationConfig],
+                          schedule: Option[Schedule],
                           auth: Option[Auth])
 
 sealed trait HTTPMethod
 
 object HTTPMethod {
-  case object Post extends HTTPMethod
-  case object Get extends HTTPMethod
+  final case object Post extends HTTPMethod
+  final case object Get extends HTTPMethod
 
   implicit val jsonDecoder: Decoder[HTTPMethod] = deriveDecoder
 }
