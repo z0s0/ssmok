@@ -21,7 +21,15 @@ object SuiteBuilder {
         case Scenario(host, path, _, _, _, _, _, _, _, _) =>
           Suite(
             suiteId,
-            List(Task(host = host, path = path, body = None, suiteId = suiteId))
+            List(
+              Task(
+                id = UUID.randomUUID(),
+                host = host,
+                path = path,
+                body = None,
+                suiteId = suiteId
+              )
+            )
           )
       }
     })

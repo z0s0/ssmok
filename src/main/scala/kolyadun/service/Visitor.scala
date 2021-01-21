@@ -15,37 +15,48 @@ object Visitor {
 
   trait Service {
     def perform(suitesStates: SuitesStates,
-                queue: Queue[Task]): ZIO[Any, Serializable, Nothing]
+                queue: Queue[Task]): ZIO[Any, Serializable, Unit]
   }
 
   class Live(client: SttpClientService) extends Service {
-    override def perform(
-      suitesStates: SuitesStates,
-      queue: Queue[Task]
-    ): ZIO[Any, Serializable, Nothing] = {
-      val worker =
-        queue.take.flatMap(performSingleTask(_, suitesStates)).forever
-
-      ZIO.forkAll(List.fill(20)(worker)).flatMap(_.join) *> ZIO.never
-    }
-
-    private def performSingleTask(task: Task, states: SuitesStates) = {
-      val suiteId = task.suiteId
-      val request =
-        basicRequest.get(uri"${task.host}${task.path}")
-
-      client.send(request).map(_.body).absolve
-
-      states.update(
-        map =>
-          map.get(suiteId) match {
-            case Some(state) =>
-              val newState =
-                state.copy(tasksLeft = state.tasksLeft.filter(_.id != task.id))
-              map + (suiteId -> newState)
-            case None => map
+    override def perform(suitesStates: SuitesStates,
+                         queue: Queue[Task]): ZIO[Any, Serializable, Unit] =
+      for {
+        _ <- ZIO.foreach(0 to 10) { _ =>
+          queue.take
+            .flatMap(performSingleTask(_, suitesStates, queue))
+            .uninterruptible
+            .forever
+            .fork
         }
-      )
+      } yield ()
+
+    private def performSingleTask(task: Task,
+                                  states: SuitesStates,
+                                  queue: Queue[Task]) = {
+      val suiteId = task.suiteId
+      val url = task.host + task.path
+
+      val request =
+        basicRequest.get(uri"$url")
+
+      for {
+        _ <- client.send(request).map(_.body)
+        _ <- states.update(
+          map =>
+            map.get(suiteId) match {
+              case Some(state) =>
+                val newState =
+                  state.copy(
+                    tasksLeft = state.tasksLeft.filter(_.id != task.id)
+                  )
+                map + (suiteId -> newState)
+              case None => map
+          }
+        )
+
+        _ <- queue.offer(task.copy(id = UUID.randomUUID()))
+      } yield ()
     }
   }
   val live: ZLayer[Has[SttpClientService], Throwable, Has[Service]] =
