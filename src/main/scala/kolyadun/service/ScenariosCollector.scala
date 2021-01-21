@@ -1,26 +1,33 @@
 package kolyadun.service
 
 import kolyadun.SttpClientService
-import kolyadun.config.ScenariosConfig.ScenariosConfig
 import kolyadun.model.{Scenario, ServiceDestination}
 import sttp.client.asynchttpclient.zio._
 import sttp.client._
 import sttp.client.circe._
-import zio.{Has, Task, URLayer, ZLayer}
+import zio.clock.Clock
+import zio.{Has, Task, ZIO, Schedule, ZLayer}
+import zio.duration._
 
 object ScenariosCollector {
   type ScenariosCollector = Has[Service]
 
   trait Service {
-    def collect: Task[List[Scenario]]
+    def collect: ZIO[Clock, Throwable, List[Scenario]]
   }
 
-  val live: URLayer[SttpClient with ScenariosConfig, ScenariosCollector] =
+  val live: ZLayer[Has[SttpClientService] with Has[List[ServiceDestination]],
+                   Nothing,
+                   Has[Service]] =
     ZLayer
       .fromServices[SttpClientService, List[ServiceDestination], Service] {
         (client, conf) =>
           new Service {
-            override def collect: Task[List[Scenario]] = {
+            override def collect: ZIO[Clock, Throwable, List[Scenario]] = {
+              val schedule = Schedule.exponential(1.millis) && Schedule.recurs(
+                100
+              )
+
               val list: List[Task[List[Scenario]]] = conf.map(sD => {
                 val req =
                   basicRequest
@@ -30,7 +37,7 @@ object ScenariosCollector {
                 client.send(req).map(_.body).absolve
               })
 
-              Task.collectAll(list).map(_.flatten)
+              Task.collectAll(list).retry(schedule).map(_.flatten)
             }
           }
 
