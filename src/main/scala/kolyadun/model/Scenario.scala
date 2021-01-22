@@ -40,5 +40,5 @@ final case class TimingBoundaries(mustSucceedWithin: Int,
                                   shouldSucceedWithin: Int)
 final case class NotificationConfig(notifyOnFailure: Boolean,
                                     notifyOnSuccess: Boolean)
-final case class Schedule(recurring: String)
+final case class Schedule(recurring: Int)
 final case class Auth(method: String, credentials: Map[String, String])

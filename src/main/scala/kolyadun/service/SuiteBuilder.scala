@@ -18,7 +18,7 @@ object SuiteBuilder {
       val suiteId = UUID.randomUUID()
 
       scenario match {
-        case Scenario(host, path, _, _, _, _, _, _, _, _) =>
+        case Scenario(host, path, _, _, _, _, _, _, schedule, _) =>
           Suite(
             suiteId,
             List(
@@ -27,7 +27,8 @@ object SuiteBuilder {
                 host = host,
                 path = path,
                 body = None,
-                suiteId = suiteId
+                suiteId = suiteId,
+                repeatEvery = schedule.flatMap(v => Some(v.recurring))
               )
             )
           )
