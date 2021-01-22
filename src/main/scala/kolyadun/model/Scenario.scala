@@ -6,6 +6,13 @@ object Scenario {
   implicit lazy val jsonDecoder: Decoder[Scenario] = deriveDecoder
   implicit lazy val bodyDecoder: Decoder[Body] = deriveDecoder
   implicit lazy val authDecoder: Decoder[Auth] = deriveDecoder
+  implicit lazy val httpMethodDecoder: Decoder[HTTPMethod] =
+    Decoder[String].emap {
+      case "get"      => Right(HTTPMethod.Get)
+      case "post"     => Right(HTTPMethod.Post)
+      case unknownVal => Left(s"invalid $unknownVal")
+    }
+
   implicit lazy val samplesConfDecoder: Decoder[SamplesConfig] = deriveDecoder
   implicit lazy val scheduleDecoder: Decoder[Schedule] = deriveDecoder
   implicit lazy val notificationConfDecoder: Decoder[NotificationConfig] =
@@ -16,7 +23,7 @@ object Scenario {
 
 final case class Scenario(host: String,
                           path: String,
-                          method: Option[String],
+                          method: Option[HTTPMethod] = Some(HTTPMethod.Get),
                           body: Option[Body],
                           assertStatusCode: Option[Int] = Some(200),
                           samples: Option[SamplesConfig],

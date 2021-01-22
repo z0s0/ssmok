@@ -10,10 +10,9 @@ import kolyadun.service.SuiteBuilder.SuiteBuilder
 import kolyadun.service.Visitor.Visitor
 import org.slf4j.LoggerFactory
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{App, ExitCode, Layer, Queue, Ref, Schedule, UIO, URIO, ZEnv, ZIO}
+import zio.{App, ExitCode, Layer, Queue, Ref, UIO, URIO, ZEnv, ZIO}
 import zio.internal.Platform
-import zio.duration._
-t
+
 object Main extends App {
   private val log = LoggerFactory.getLogger("RuntimeReporter")
   override val platform: Platform = Platform.default.withReportFailure {
@@ -36,6 +35,7 @@ object Main extends App {
         )
       )
       tasks <- ZIO.succeed(suites.flatMap(_.tasks))
+      _ <- UIO(println(tasks))
       _ <- q.offerAll(tasks)
       _ <- visitor.perform(suitesStates, q)
       _ <- ZIO.never

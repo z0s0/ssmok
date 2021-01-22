@@ -3,8 +3,8 @@ package kolyadun.service
 import java.util.UUID
 
 import kolyadun.SttpClientService
-import kolyadun.model.{Suite, Task}
-import zio.{Has, Queue, Ref, UIO, ZIO, ZLayer}
+import kolyadun.model.{HTTPMethod, Suite, Task}
+import zio.{Has, Queue, Ref, ZIO, ZLayer}
 import sttp.client.asynchttpclient.zio._
 import sttp.client._
 import sttp.client.circe._
@@ -48,8 +48,10 @@ object Visitor {
       val suiteId = task.suiteId
       val url = task.host + task.path
 
-      val request =
-        basicRequest.get(uri"$url")
+      val request = task.method match {
+        case HTTPMethod.Post => basicRequest.post(uri"$url").body(task.body)
+        case HTTPMethod.Get  => basicRequest.get(uri"$url")
+      }
 
       for {
         _ <- client.send(request)
