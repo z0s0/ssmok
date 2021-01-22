@@ -8,4 +8,5 @@ final case class Task(id: UUID,
 //                      method: HTTPMethod,
                       body: Option[String],
                       assertStatusCode: Int = 200,
-                      suiteId: UUID)
+                      suiteId: UUID,
+                      repeatEvery: Option[Int] = None)
