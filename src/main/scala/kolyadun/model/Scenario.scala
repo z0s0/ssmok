@@ -17,6 +17,7 @@ object Scenario {
 
 final case class Scenario(host: String,
                           path: String,
+                          tag: String,
                           method: Option[HTTPMethod] = Some(HTTPMethod.Get),
                           body: Option[Body],
                           assertStatusCode: Option[Int] = Some(200),
@@ -47,8 +48,8 @@ object HTTPMethod {
 
 final case class Body(raw: String, params: Map[String, String])
 final case class SamplesConfig(minCombinations: Int, maxCombinations: Int)
-final case class TimingBoundaries(mustSucceedWithin: Int,
-                                  shouldSucceedWithin: Int)
+final case class TimingBoundaries(mustSucceedWithin: Option[Int],
+                                  shouldSucceedWithin: Option[Int])
 final case class NotificationConfig(notifyOnFailure: Boolean,
                                     notifyOnSuccess: Boolean)
 final case class Schedule(recurring: Int)

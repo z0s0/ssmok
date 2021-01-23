@@ -1,11 +1,9 @@
 package kolyadun
 
-import java.util.UUID
-
 import kolyadun.api.{HealthCheck, SuitesRoutes}
 import kolyadun.api.SuitesRoutes.SuitesRoutes
 import kolyadun.config.ScenariosConfig
-import kolyadun.model.{Suite, Task}
+import kolyadun.model.{SuitesStates, Task}
 import kolyadun.service.{ScenariosCollector, SuiteBuilder, Visitor}
 import kolyadun.service.ScenariosCollector.ScenariosCollector
 import kolyadun.service.SuiteBuilder.SuiteBuilder
@@ -15,7 +13,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.slf4j.LoggerFactory
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{App, ExitCode, Layer, Queue, Ref, UIO, URIO, ZEnv, ZIO}
+import zio.{App, ExitCode, Layer, Queue, URIO, ZEnv, ZIO}
 import zio.internal.Platform
 import zio.interop.catz.implicits.ioTimer
 import zio.interop.catz._
@@ -37,12 +35,7 @@ object Main extends App {
       visitor <- ZIO.access[Visitor](_.get)
       q <- Queue.bounded[Task](1000)
       suites <- ZIO.succeed(scenarios.map(suiteBuilder.build))
-      suitesStates <- Ref.make(
-        suites.foldLeft(Map[UUID, Suite.State]())(
-          (acc, suite) =>
-            acc + (suite.id -> Suite.State.initial(suite.id, suite.tasks))
-        )
-      )
+      suitesStates <- SuitesStates.fromSuites(suites)
       routes <- ZIO.access[SuitesRoutes](
         _.get.route(suitesStates).combineK((new HealthCheck).route)
       )

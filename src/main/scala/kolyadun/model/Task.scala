@@ -12,8 +12,11 @@ object Task {
 final case class Task(id: UUID,
                       host: String,
                       path: String,
+                      tag: String,
                       method: HTTPMethod,
                       body: Option[String],
                       assertStatusCode: Int = 200,
                       suiteId: UUID,
+                      mustSucceedWithin: Option[Int],
+                      shouldSucceedWithin: Option[Int],
                       repeatEvery: Option[Int] = None)
