@@ -2,16 +2,25 @@ package kolyadun
 
 import java.util.UUID
 
+import kolyadun.api.{HealthCheck, SuitesRoutes}
+import kolyadun.api.SuitesRoutes.SuitesRoutes
 import kolyadun.config.ScenariosConfig
 import kolyadun.model.{Suite, Task}
 import kolyadun.service.{ScenariosCollector, SuiteBuilder, Visitor}
 import kolyadun.service.ScenariosCollector.ScenariosCollector
 import kolyadun.service.SuiteBuilder.SuiteBuilder
 import kolyadun.service.Visitor.Visitor
+import org.http4s.HttpRoutes
+import org.http4s.server.Router
+import org.http4s.server.blaze.BlazeServerBuilder
 import org.slf4j.LoggerFactory
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{App, ExitCode, Layer, Queue, Ref, UIO, URIO, ZEnv, ZIO}
+import zio.{App, ExitCode, Has, Layer, Queue, Ref, UIO, URIO, ZEnv, ZIO}
 import zio.internal.Platform
+import zio.interop.catz.implicits.ioTimer
+import zio.interop.catz._
+import org.http4s.implicits._
+import cats.implicits._
 
 object Main extends App {
   private val log = LoggerFactory.getLogger("RuntimeReporter")
@@ -22,6 +31,10 @@ object Main extends App {
 
   override def run(args: List[String]): URIO[ZEnv, ExitCode] = {
     val program = for {
+      routes <- ZIO.access[SuitesRoutes](
+        _.get.route.combineK((new HealthCheck).route)
+      )
+      _ <- startHttp(routes).fork
       service <- ZIO.access[ScenariosCollector](_.get)
       suiteBuilder <- ZIO.access[SuiteBuilder](_.get)
       scenarios <- service.collect
@@ -35,7 +48,7 @@ object Main extends App {
         )
       )
       tasks <- ZIO.succeed(suites.flatMap(_.tasks))
-      _ <- UIO(println(tasks))
+
       _ <- q.offerAll(tasks)
       _ <- visitor.perform(suitesStates, q)
       _ <- ZIO.never
@@ -43,11 +56,26 @@ object Main extends App {
 
     val layer: Layer[
       Throwable,
-      ScenariosCollector with SuiteBuilder with Visitor
+      ScenariosCollector with SuiteBuilder with Visitor with SuitesRoutes
     ] = (AsyncHttpClientZioBackend
       .layer() ++ ScenariosConfig.live) >>>
-      (ScenariosCollector.live ++ SuiteBuilder.live ++ Visitor.live)
+      (ScenariosCollector.live ++ SuiteBuilder.live ++ Visitor.live ++ SuitesRoutes.live)
 
     program.provideCustomLayer(layer).exitCode
+  }
+
+  private def startHttp[R](
+    routes: HttpRoutes[zio.Task]
+  ): ZIO[R, Throwable, Unit] = {
+    ZIO.runtime[R].flatMap { implicit rt =>
+      val httpApp = Router("api" -> routes).orNotFound
+
+      BlazeServerBuilder[zio.Task]
+        .withHttpApp(httpApp)
+        .bindHttp(5100, "127.0.0.1")
+        .serve
+        .compile
+        .drain
+    }
   }
 }
