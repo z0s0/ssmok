@@ -25,7 +25,7 @@ object SuiteBuilder {
             body,
             assertStatusCodeOpt,
             _,
-            _,
+            timingBoundaries,
             _,
             schedule,
             _
@@ -41,7 +41,11 @@ object SuiteBuilder {
                 body = Some(""),
                 suiteId = suiteId,
                 assertStatusCode = assertStatusCodeOpt.getOrElse(200),
-                repeatEvery = schedule.flatMap(v => Some(v.recurring))
+                repeatEvery = schedule.flatMap(v => Some(v.recurring)),
+                shouldSucceedWithin =
+                  timingBoundaries.flatMap(v => v.shouldSucceedWithin),
+                mustSucceedWithin =
+                  timingBoundaries.flatMap(v => v.mustSucceedWithin)
               )
             )
           )

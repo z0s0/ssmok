@@ -16,4 +16,6 @@ final case class Task(id: UUID,
                       body: Option[String],
                       assertStatusCode: Int = 200,
                       suiteId: UUID,
+                      mustSucceedWithin: Option[Int],
+                      shouldSucceedWithin: Option[Int],
                       repeatEvery: Option[Int] = None)

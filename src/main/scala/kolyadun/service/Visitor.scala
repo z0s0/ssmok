@@ -2,6 +2,7 @@ package kolyadun.service
 
 import java.util.UUID
 
+import cats.data.Validated
 import kolyadun.SttpClientService
 import kolyadun.model.{HTTPMethod, Suite, Task}
 import zio.{Has, Queue, Ref, UIO, ZIO, ZLayer}
@@ -53,14 +54,18 @@ object Visitor {
         case HTTPMethod.Get  => basicRequest.get(uri"$url")
       }
       for {
-        v <- states.get
-        response <- client.send(request)
+        (responseTime, response) <- client.send(request).timed
         _ <- states.update(
           map =>
             map.get(suiteId) match {
               case Some(state) =>
                 val newState =
-                  newStateFromResponseAndTask(response, state, task)
+                  newStateFromResponseAndTask(
+                    response,
+                    state,
+                    task,
+                    responseTime.toMillis
+                  )
                 map + (suiteId -> newState)
               case None => map
           }
@@ -71,16 +76,30 @@ object Visitor {
 
     private def newStateFromResponseAndTask(response: Response[_],
                                             state: Suite.State,
-                                            task: Task): Suite.State = {
-      val tasksLeft = state.tasksLeft.filter(_.id != task.id)
+                                            task: Task,
+                                            responseTime: Long): Suite.State = {
       val responseCode = response.code.code
+      val statusCodeValidation = Validated.cond(
+        responseCode == task.assertStatusCode,
+        "ok",
+        List(s"Status code ${responseCode}. ${task.assertStatusCode} expected")
+      )
+      val responseTimeValidation = Validated.cond(
+        task.mustSucceedWithin.fold(true)(_ >= responseTime),
+        "ok",
+        List("pidor")
+      )
+      val validation = statusCodeValidation.combine(responseTimeValidation)
+      val tasksLeft = state.tasksLeft.filter(_.id != task.id)
 
-      if (responseCode == task.assertStatusCode) {
-        state.copy(tasksLeft = tasksLeft)
-      } else {
-        val err =
-          s"Status code ${responseCode}. ${task.assertStatusCode} expected"
-        state.copy(tasksLeft = tasksLeft, errors = err :: state.errors)
+      validation match {
+        case Validated.Valid(_) =>
+          state.copy(tasksLeft = tasksLeft)
+        case Validated.Invalid(errs) =>
+          state.copy(
+            tasksLeft = tasksLeft,
+            errors = errs.mkString(", ") :: state.errors
+          )
       }
     }
   }
