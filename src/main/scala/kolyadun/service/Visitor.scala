@@ -54,7 +54,6 @@ object Visitor {
       }
       for {
         v <- states.get
-        _ <- UIO(println(v))
         response <- client.send(request)
         _ <- states.update(
           map =>
