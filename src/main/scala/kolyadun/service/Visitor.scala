@@ -4,7 +4,7 @@ import java.util.UUID
 
 import kolyadun.SttpClientService
 import kolyadun.model.{HTTPMethod, Suite, Task}
-import zio.{Has, Queue, Ref, ZIO, ZLayer}
+import zio.{Has, Queue, Ref, UIO, ZIO, ZLayer}
 import sttp.client.asynchttpclient.zio._
 import sttp.client._
 import sttp.client.circe._
@@ -52,17 +52,15 @@ object Visitor {
         case HTTPMethod.Post => basicRequest.post(uri"$url").body(task.body)
         case HTTPMethod.Get  => basicRequest.get(uri"$url")
       }
-
       for {
-        _ <- client.send(request)
-        _ <- ZIO.effect(client.close())
+        v <- states.get
+        response <- client.send(request)
         _ <- states.update(
           map =>
             map.get(suiteId) match {
               case Some(state) =>
                 val newState =
-                  state
-                    .copy(tasksLeft = state.tasksLeft.filter(_.id != task.id))
+                  newStateFromResponseAndTask(response, state, task)
                 map + (suiteId -> newState)
               case None => map
           }
@@ -70,7 +68,23 @@ object Visitor {
 
       } yield ()
     }
+
+    private def newStateFromResponseAndTask(response: Response[_],
+                                            state: Suite.State,
+                                            task: Task): Suite.State = {
+      val tasksLeft = state.tasksLeft.filter(_.id != task.id)
+      val responseCode = response.code.code
+
+      if (responseCode == task.assertStatusCode) {
+        state.copy(tasksLeft = tasksLeft)
+      } else {
+        val err =
+          s"Status code ${responseCode}. ${task.assertStatusCode} expected"
+        state.copy(tasksLeft = tasksLeft, errors = err :: state.errors)
+      }
+    }
   }
+
   val live: ZLayer[Has[SttpClientService], Throwable, Has[Service]] =
     ZLayer.fromService(new Live(_))
 }

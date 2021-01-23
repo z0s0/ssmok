@@ -1,18 +1,12 @@
 package kolyadun.model
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.deriveDecoder
+import io.circe.syntax.EncoderOps
 
 object Scenario {
   implicit lazy val jsonDecoder: Decoder[Scenario] = deriveDecoder
   implicit lazy val bodyDecoder: Decoder[Body] = deriveDecoder
   implicit lazy val authDecoder: Decoder[Auth] = deriveDecoder
-  implicit lazy val httpMethodDecoder: Decoder[HTTPMethod] =
-    Decoder[String].emap {
-      case "get"      => Right(HTTPMethod.Get)
-      case "post"     => Right(HTTPMethod.Post)
-      case unknownVal => Left(s"invalid $unknownVal")
-    }
-
   implicit lazy val samplesConfDecoder: Decoder[SamplesConfig] = deriveDecoder
   implicit lazy val scheduleDecoder: Decoder[Schedule] = deriveDecoder
   implicit lazy val notificationConfDecoder: Decoder[NotificationConfig] =
@@ -38,7 +32,17 @@ object HTTPMethod {
   final case object Post extends HTTPMethod
   final case object Get extends HTTPMethod
 
-  implicit val jsonDecoder: Decoder[HTTPMethod] = deriveDecoder
+  implicit lazy val httpMethodEncoder: Encoder[HTTPMethod] = Encoder.instance {
+    case HTTPMethod.Post => "post".asJson
+    case HTTPMethod.Get  => "get".asJson
+  }
+
+  implicit lazy val httpMethodDecoder: Decoder[HTTPMethod] =
+    Decoder[String].emap {
+      case "get"      => Right(HTTPMethod.Get)
+      case "post"     => Right(HTTPMethod.Post)
+      case unknownVal => Left(s"invalid $unknownVal")
+    }
 }
 
 final case class Body(raw: String, params: Map[String, String])

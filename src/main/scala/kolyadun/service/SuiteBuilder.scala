@@ -23,7 +23,7 @@ object SuiteBuilder {
             path,
             Some(method),
             body,
-            _,
+            assertStatusCodeOpt,
             _,
             _,
             _,
@@ -40,6 +40,7 @@ object SuiteBuilder {
                 method = method,
                 body = Some(""),
                 suiteId = suiteId,
+                assertStatusCode = assertStatusCodeOpt.getOrElse(200),
                 repeatEvery = schedule.flatMap(v => Some(v.recurring))
               )
             )
