@@ -21,6 +21,7 @@ object SuiteBuilder {
         case Scenario(
             host,
             path,
+            tag,
             Some(method),
             body,
             assertStatusCodeOpt,
@@ -37,6 +38,7 @@ object SuiteBuilder {
                 id = UUID.randomUUID(),
                 host = host,
                 path = path,
+                tag = tag,
                 method = method,
                 body = Some(""),
                 suiteId = suiteId,

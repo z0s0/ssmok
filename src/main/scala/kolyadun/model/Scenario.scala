@@ -17,6 +17,7 @@ object Scenario {
 
 final case class Scenario(host: String,
                           path: String,
+                          tag: String,
                           method: Option[HTTPMethod] = Some(HTTPMethod.Get),
                           body: Option[Body],
                           assertStatusCode: Option[Int] = Some(200),
