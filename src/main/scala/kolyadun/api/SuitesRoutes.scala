@@ -16,7 +16,7 @@ object SuitesRoutes {
   type SuitesRoutes = Has[Service]
 
   trait Service {
-    def route: HttpRoutes[Task]
+    def route(suitesStates: SuitesStates): HttpRoutes[Task]
   }
 
   implicit def circeJsonDecoder[A: Decoder]: EntityDecoder[Task, A] = jsonOf
@@ -26,21 +26,12 @@ object SuitesRoutes {
   val live: ULayer[SuitesRoutes] = ZLayer.succeed(new SuitesRouter())
 
   final class SuitesRouter extends SuitesRoutes.Service with Http4sDsl[Task] {
-    override def route: HttpRoutes[Task] = HttpRoutes.of[Task] {
-      case GET -> Root / "suites" => {
-        val suitesStates = Ref.make(
-          Map[UUID, Suite.State](
-            UUID.randomUUID() -> Suite.State.initial(UUID.randomUUID(), List())
-          )
-        )
+    override def route(suitesStates: SuitesStates): HttpRoutes[Task] =
+      HttpRoutes.of[Task] {
+        case GET -> Root / "suites" => {
 
-        for {
-          ref <- suitesStates
-          v <- Ok(ref.get)
-
-        } yield v
-
+          Ok(suitesStates.get)
+        }
       }
-    }
   }
 }

@@ -31,9 +31,6 @@ object Main extends App {
 
   override def run(args: List[String]): URIO[ZEnv, ExitCode] = {
     val program = for {
-      routes <- ZIO.access[SuitesRoutes](
-        _.get.route.combineK((new HealthCheck).route)
-      )
       service <- ZIO.access[ScenariosCollector](_.get)
       suiteBuilder <- ZIO.access[SuiteBuilder](_.get)
       scenarios <- service.collect
@@ -45,6 +42,9 @@ object Main extends App {
           (acc, suite) =>
             acc + (suite.id -> Suite.State.initial(suite.id, suite.tasks))
         )
+      )
+      routes <- ZIO.access[SuitesRoutes](
+        _.get.route(suitesStates).combineK((new HealthCheck).route)
       )
       tasks <- ZIO.succeed(suites.flatMap(_.tasks))
       _ <- q.offerAll(tasks)
