@@ -15,7 +15,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.slf4j.LoggerFactory
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{App, ExitCode, Has, Layer, Queue, Ref, UIO, URIO, ZEnv, ZIO}
+import zio.{App, ExitCode, Layer, Queue, Ref, URIO, ZEnv, ZIO}
 import zio.internal.Platform
 import zio.interop.catz.implicits.ioTimer
 import zio.interop.catz._
@@ -34,7 +34,6 @@ object Main extends App {
       routes <- ZIO.access[SuitesRoutes](
         _.get.route.combineK((new HealthCheck).route)
       )
-      _ <- startHttp(routes).fork
       service <- ZIO.access[ScenariosCollector](_.get)
       suiteBuilder <- ZIO.access[SuiteBuilder](_.get)
       scenarios <- service.collect
@@ -51,6 +50,7 @@ object Main extends App {
 
       _ <- q.offerAll(tasks)
       _ <- visitor.perform(suitesStates, q)
+      _ <- startHttp(routes).fork
       _ <- ZIO.never
     } yield ()
 
