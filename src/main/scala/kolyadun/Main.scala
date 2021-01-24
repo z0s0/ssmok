@@ -13,7 +13,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.slf4j.LoggerFactory
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{App, ExitCode, Layer, Queue, URIO, ZEnv, ZIO}
+import zio.{App, ExitCode, Layer, Queue, Ref, UIO, URIO, ZEnv, ZIO}
 import zio.internal.Platform
 import zio.interop.catz.implicits.ioTimer
 import zio.interop.catz._
@@ -32,18 +32,20 @@ object Main extends App {
       service <- ZIO.access[ScenariosCollector](_.get)
       suiteBuilder <- ZIO.access[SuiteBuilder](_.get)
       scenarios <- service.collect
-      visitor <- ZIO.access[Visitor](_.get)
-      q <- Queue.bounded[Task](1000)
-      suites <- ZIO.succeed(scenarios.map(suiteBuilder.build))
-      suitesStates <- SuitesStates.fromSuites(suites)
-      routes <- ZIO.access[SuitesRoutes](
-        _.get.route(suitesStates).combineK((new HealthCheck).route)
-      )
-      tasks <- ZIO.succeed(suites.flatMap(_.tasks))
-      _ <- q.offerAll(tasks)
-      _ <- visitor.perform(suitesStates, q)
-      _ <- startHttp(routes).fork
-      _ <- ZIO.never
+      scenariosGlobal <- Ref.make(scenarios)
+      _ <- UIO(println(scenarios))
+//      visitor <- ZIO.access[Visitor](_.get)
+//      q <- Queue.bounded[Task](1000)
+//      suites <- ZIO.succeed(scenarios.map(suiteBuilder.build))
+//      suitesStates <- SuitesStates.fromSuites(suites)
+//      routes <- ZIO.access[SuitesRoutes](
+//        _.get.route(suitesStates).combineK((new HealthCheck).route)
+//      )
+//      tasks <- ZIO.succeed(suites.flatMap(_.tasks))
+//      _ <- q.offerAll(tasks)
+//      _ <- visitor.perform(suitesStates, q)
+//      _ <- startHttp(routes).fork
+//      _ <- ZIO.never
     } yield ()
 
     val layer: Layer[
