@@ -1,7 +1,6 @@
 package kolyadun
 
 import kolyadun.api.SuitesRoutes
-import kolyadun.config.ScenariosConfig
 import kolyadun.service.{ScenariosCollector, SuiteBuilder, Visitor}
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 import kolyadun.config.{Layer => ConfigLayer}
@@ -9,6 +8,6 @@ import kolyadun.config.{Layer => ConfigLayer}
 object DI {
   val live =
     (AsyncHttpClientZioBackend
-      .layer() ++ ScenariosConfig.live ++ ConfigLayer.live) >>>
+      .layer() ++ ConfigLayer.live) >>>
       (ScenariosCollector.live ++ SuiteBuilder.live ++ Visitor.live ++ SuitesRoutes.live ++ ConfigLayer.live)
 }
