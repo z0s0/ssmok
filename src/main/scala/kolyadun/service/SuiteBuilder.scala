@@ -2,6 +2,7 @@ package kolyadun.service
 
 import java.util.UUID
 
+import kolyadun.model.HTTPMethod.Get
 import kolyadun.model.{Scenario, Suite, Task}
 import zio.{Has, ULayer, ZLayer}
 
@@ -22,7 +23,7 @@ object SuiteBuilder {
             host,
             path,
             tag,
-            Some(method),
+            methodOption,
             body,
             assertStatusCodeOpt,
             _,
@@ -31,6 +32,8 @@ object SuiteBuilder {
             schedule,
             _
             ) =>
+          val method = methodOption.getOrElse(Get)
+
           Suite(
             suiteId,
             List(

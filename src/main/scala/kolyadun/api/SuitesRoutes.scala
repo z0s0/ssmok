@@ -1,13 +1,11 @@
 package kolyadun.api
 
-import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes}
-import org.http4s.dsl.Http4sDsl
 import zio.interop.catz._
-import org.http4s.circe._
-import io.circe.generic.auto._
-import io.circe.{Decoder, Encoder}
+import zio.{Has, Task, ULayer, ZLayer}
+import org.http4s.HttpRoutes
+import org.http4s.dsl.Http4sDsl
+
 import kolyadun.model.SuitesStates
-import zio.{Has, Ref, Task, ULayer, ZLayer}
 
 object SuitesRoutes {
   type SuitesRoutes = Has[Service]
@@ -15,10 +13,6 @@ object SuitesRoutes {
   trait Service {
     def route(suitesStates: SuitesStates): HttpRoutes[Task]
   }
-
-  implicit def circeJsonDecoder[A: Decoder]: EntityDecoder[Task, A] = jsonOf
-  implicit def circeJsonEncoder[A: Encoder]: EntityEncoder[Task, A] =
-    jsonEncoderOf
 
   val live: ULayer[SuitesRoutes] = ZLayer.succeed(new SuitesRouter())
 

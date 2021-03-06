@@ -13,7 +13,12 @@ object ProjectConfig {
     val slf4j = "1.7.30"
     val sttp = "2.1.4"
     val circe = "0.13.0"
+    val pureConfigVersion = "0.14.0"
   }
+
+  val configDeps = List(
+    "com.github.pureconfig" %% "pureconfig" % versions.pureConfigVersion
+  )
 
   val zioDeps = Seq(
     "dev.zio" %% "zio" % versions.zio,
@@ -48,5 +53,5 @@ object ProjectConfig {
     "io.circe" %% "circe-generic" % versions.circe,
     "io.circe" %% "circe-generic-extras" % versions.circe
   )
-  val deps = zioDeps ++ http4sDeps ++ circeDeps ++ logDependencies ++ sttpDeps
+  val deps = zioDeps ++ http4sDeps ++ circeDeps ++ logDependencies ++ sttpDeps ++ configDeps
 }
