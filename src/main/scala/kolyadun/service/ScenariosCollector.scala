@@ -10,10 +10,13 @@ import zio.{Has, Task, ZIO, Schedule, ZLayer}
 import zio.duration._
 
 object ScenariosCollector {
+  type SourceResponse = Map[String, List[Scenario]]
+  type ScenariosByApp = Map[String, List[Scenario]]
+
   type ScenariosCollector = Has[Service]
 
   trait Service {
-    def collect: ZIO[Clock, Throwable, List[Scenario]]
+    def collect: ZIO[Clock, Throwable, ScenariosByApp]
   }
 
   val live: ZLayer[Has[SttpClientService] with Has[List[ServiceDestination]],
@@ -23,21 +26,36 @@ object ScenariosCollector {
       .fromServices[SttpClientService, List[ServiceDestination], Service] {
         (client, conf) =>
           new Service {
-            override def collect: ZIO[Clock, Throwable, List[Scenario]] = {
+            override def collect: ZIO[Clock, Throwable, ScenariosByApp] = {
               val schedule = Schedule.exponential(1.millis) && Schedule.recurs(
                 100
               )
 
-              val list: List[Task[List[Scenario]]] = conf.map(sD => {
+              val list: List[Task[SourceResponse]] = conf.map(sD => {
                 val req =
                   basicRequest
                     .get(uri"${sD.host}")
-                    .response(asJson[List[Scenario]])
+                    .response(asJson[SourceResponse])
 
                 client.send(req).map(_.body).absolve
               })
 
-              Task.collectAll(list).retry(schedule).map(_.flatten)
+              Task.collectAll(list).map { allSourcesResponses =>
+                allSourcesResponses
+                  .foldLeft(Map[String, List[Scenario]]()) {
+                    (acc, oneSourceResp) =>
+                      val sourceApps = oneSourceResp.keys.toList
+
+                      sourceApps.foldLeft(acc) { (acc, appKey) =>
+                        acc.get(appKey) match {
+                          case Some(alreadyStoredScenarios) =>
+                            acc + (appKey -> (oneSourceResp(appKey) ++ alreadyStoredScenarios))
+                          case None =>
+                            acc + (appKey -> oneSourceResp(appKey))
+                        }
+                      }
+                  }
+              }
             }
           }
 
