@@ -36,10 +36,10 @@ object Main extends App {
       )
       suitesStates <- SuitesStates.fromSuites(suites)
       routes <- ZIO.access[SuitesRoutes](_.get.route(suitesStates))
-      _ <- startHttp(routes, apiConf)
       tasks <- ZIO.succeed(suites.flatMap(_.tasks))
       _ <- q.offerAll(tasks)
       _ <- visitor.perform(suitesStates, q).fork
+      _ <- startHttp(routes, apiConf)
       _ <- ZIO.never
     } yield ()
 
