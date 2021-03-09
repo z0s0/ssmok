@@ -8,3 +8,4 @@
 * Trigger suite assertions via Kafka  
 * Trigger suite assertions via HTTP
 * Slack notification rules 
+* Simple UI 
